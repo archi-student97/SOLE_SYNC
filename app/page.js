@@ -75,8 +75,8 @@ export default function LoginPage() {
       <div className="loginLeft">
         <div className="loginLeftOverlay"></div>
         <div className="loginLeftContent">
-          <div className="loginBrand">
-            <span className="loginBrandIcon">SOLE</span>
+          <div className="loginBrand loginBrandRow">
+            <span className="loginBrandIcon">SS</span>
             <span className="loginBrandName">Sole Sync</span>
           </div>
         </div>
@@ -170,9 +170,9 @@ export default function LoginPage() {
             </form>
           )}
 
-          {forgotMessage && <div style={{ marginTop: "12px", color: "#059669", fontSize: "14px", textAlign: "center" }}>{forgotMessage}</div>}
+          {forgotMessage && <div className="loginSuccessMsg">{forgotMessage}</div>}
 
-          <div style={{ marginTop: "16px", textAlign: "center" }}>
+          <div className="loginToggleWrap">
             <button
               type="button"
               onClick={() => {
@@ -180,14 +180,7 @@ export default function LoginPage() {
                 setError("");
                 setForgotMessage("");
               }}
-              style={{
-                background: "transparent",
-                border: "none",
-                color: "var(--primary)",
-                cursor: "pointer",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}
+              className="loginToggleBtn"
             >
               {forgotMode ? "Back to Login" : "Forgot Password?"}
             </button>

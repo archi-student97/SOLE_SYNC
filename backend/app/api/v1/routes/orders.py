@@ -1,5 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.services.auth_service import get_user_from_token
 from app.schemas.common import MessageResponse
 from app.schemas.order import (
     ApproveDistributorResponse,
@@ -23,6 +25,7 @@ from app.services.order_service import (
 )
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+bearer_scheme_optional = HTTPBearer(auto_error=False)
 
 
 @router.get("", response_model=list[Order])
@@ -41,8 +44,17 @@ async def list_orders_by_role_endpoint(role: str) -> list[Order]:
 
 
 @router.post("", response_model=Order)
-async def create_order_endpoint(payload: OrderCreate) -> Order:
-    created = await place_order(payload.model_dump())
+async def create_order_endpoint(
+    payload: OrderCreate,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme_optional),
+) -> Order:
+    order_data = payload.model_dump()
+    if credentials:
+        user = await get_user_from_token(credentials.credentials)
+        if user:
+            order_data["userId"] = user["id"]
+
+    created = await place_order(order_data)
     return Order(**created)
 
 
@@ -74,8 +86,18 @@ async def approve_by_distributor_endpoint(order_id: int) -> ApproveDistributorRe
 
 
 @router.post("/{order_id}/request-restock", response_model=Order)
-async def request_restock_endpoint(order_id: int, payload: RequestRestockPayload) -> Order:
-    created = await request_restock_from_management(order_id, payload.model_dump())
+async def request_restock_endpoint(
+    order_id: int,
+    payload: RequestRestockPayload,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme_optional),
+) -> Order:
+    user_id = None
+    if credentials:
+        user = await get_user_from_token(credentials.credentials)
+        if user:
+            user_id = user["id"]
+
+    created = await request_restock_from_management(order_id, payload.model_dump(), user_id=user_id)
     return Order(**created)
 
 

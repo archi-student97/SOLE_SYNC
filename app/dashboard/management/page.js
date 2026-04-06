@@ -5,7 +5,12 @@ import Sidebar from "@/components/Sidebar";
 import Card from "@/components/Card";
 import Table from "@/components/Table";
 import Button from "@/components/Button";
-import { createUserAccount, deleteUserAccount, getManagedUsers } from "@/services/userService";
+import {
+  createUserAccount,
+  deleteUserAccount,
+  getDistributorsForRetailerLink,
+  getManagedUsers,
+} from "@/services/userService";
 import {
   getOrders,
   approveOrder,
@@ -22,6 +27,7 @@ import {
   createScheme,
   deleteScheme,
 } from "@/api/stockApi";
+import { getSummary } from "@/services/financeService";
 
 export default function ManagementPage() {
   const [activeFeature, setActiveFeature] = useState("takeOrders");
@@ -29,6 +35,7 @@ export default function ManagementPage() {
   const [stock, setStock] = useState([]);
   const [schemes, setSchemes] = useState([]);
   const [stockSummary, setStockSummary] = useState(null);
+  const [financeSummary, setFinanceSummary] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
 
   const [schemeName, setSchemeName] = useState("");
@@ -38,26 +45,43 @@ export default function ManagementPage() {
   const [userRole, setUserRole] = useState("distributor");
   const [userEmail, setUserEmail] = useState("");
   const [userPassword, setUserPassword] = useState("");
+  const [selectedDistributorId, setSelectedDistributorId] = useState("");
   const [userMessage, setUserMessage] = useState("");
+  const [userErrors, setUserErrors] = useState({});
   const [users, setUsers] = useState([]);
+  const [distributors, setDistributors] = useState([]);
+  const [distributorsLoading, setDistributorsLoading] = useState(false);
+  const [distributorsError, setDistributorsError] = useState("");
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const [ordersData, stockData, schemesData, summary, usersData] = await Promise.all([
-      getOrders(),
-      getStockItemsByRole("management"),
-      getSchemesFromApi(),
-      getStockSummary("management"),
-      getManagedUsers(),
-    ]);
-    setOrders(ordersData);
-    setStock(stockData);
-    setSchemes(schemesData);
-    setStockSummary(summary);
-    setUsers(usersData);
+    setDistributorsLoading(true);
+    setDistributorsError("");
+    try {
+      const [ordersData, stockData, schemesData, summary, usersData, financeData, distributorsData] = await Promise.all([
+        getOrders(),
+        getStockItemsByRole("management"),
+        getSchemesFromApi(),
+        getStockSummary("management"),
+        getManagedUsers(),
+        getSummary("management"),
+        getDistributorsForRetailerLink(),
+      ]);
+      setOrders(ordersData);
+      setStock(stockData);
+      setSchemes(schemesData);
+      setStockSummary(summary);
+      setUsers(usersData);
+      setFinanceSummary(financeData);
+      setDistributors(distributorsData || []);
+    } catch (error) {
+      setDistributorsError(error.message || "Failed to fetch distributors");
+    } finally {
+      setDistributorsLoading(false);
+    }
   };
 
   const handleApprove = async (id) => {
@@ -102,12 +126,31 @@ export default function ManagementPage() {
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setUserMessage("");
+    setUserErrors({});
+    const nextErrors = {};
+    if (!userName.trim()) nextErrors.name = "Name is required";
+    if (!userEmail.trim()) nextErrors.email = "Email is required";
+    if (!userPassword.trim()) nextErrors.password = "Password is required";
+    if (userRole === "retailer" && !selectedDistributorId) {
+      nextErrors.distributorId = "Please select a distributor";
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setUserErrors(nextErrors);
+      return;
+    }
     try {
-      await createUserAccount(userName, userRole, userEmail, userPassword);
+      await createUserAccount(
+        userName,
+        userRole,
+        userEmail,
+        userPassword,
+        userRole === "retailer" ? Number(selectedDistributorId) : null
+      );
       setUserName("");
       setUserRole("distributor");
       setUserEmail("");
       setUserPassword("");
+      setSelectedDistributorId("");
       setUserMessage("User created successfully");
       loadData();
     } catch (error) {
@@ -130,8 +173,29 @@ export default function ManagementPage() {
       ? distributorOrders
       : distributorOrders.filter((o) => o.status === filterStatus);
 
+  const getUserById = (id) => users.find((u) => Number(u.id) === Number(id));
+  const getOrderFromLabel = (order) => {
+    const user = getUserById(order.userId);
+    if (user?.name) return `${user.name} (${order.fromRole})`;
+    return order.fromRole;
+  };
+  const getOrderToLabel = (order) => {
+    if (order.toRole === "management") return "Management";
+    if (order.toRole === "distributor") {
+      // Retailer order goes to selected distributor.
+      const fromUser = getUserById(order.userId);
+      const linkedDistributor = distributors.find(
+        (d) => Number(d.id) === Number(fromUser?.distributorId)
+      );
+      if (linkedDistributor?.name) return `${linkedDistributor.name} (distributor)`;
+    }
+    return order.toRole;
+  };
+
   const orderColumns = [
     { key: "id", label: "Order ID" },
+    { key: "orderedBy", label: "Ordered By", render: (_, row) => getOrderFromLabel(row) },
+    { key: "orderedTo", label: "Ordered To", render: (_, row) => getOrderToLabel(row) },
     { key: "itemName", label: "Item" },
     { key: "quantity", label: "Qty" },
     {
@@ -172,6 +236,17 @@ export default function ManagementPage() {
     { key: "validity", label: "Valid Until", render: (val) => val || "No expiry" },
     { key: "createdAt", label: "Created", render: (val) => val ? new Date(val).toLocaleDateString() : "-" },
   ];
+  const distributorUsers = users
+    .filter((u) => u.role === "distributor")
+    .map((u, idx) => ({ ...u, displayId: idx + 1 }));
+  const retailerUsers = users
+    .filter((u) => u.role === "retailer")
+    .map((u, idx) => ({ ...u, displayId: idx + 1 }));
+  const getDistributorNameForRetailer = (row) => {
+    if (row.distributorName) return row.distributorName;
+    const linked = distributors.find((d) => Number(d.id) === Number(row.distributorId));
+    return linked?.name || "-";
+  };
 
   const renderContent = () => {
     switch (activeFeature) {
@@ -321,11 +396,57 @@ export default function ManagementPage() {
               </div>
               <div className="formGroup">
                 <label>Role</label>
-                <select value={userRole} onChange={(e) => setUserRole(e.target.value)} required>
+                <select
+                  value={userRole}
+                  onChange={(e) => {
+                    const nextRole = e.target.value;
+                    setUserRole(nextRole);
+                    setUserErrors((prev) => ({ ...prev, distributorId: undefined }));
+                    if (nextRole !== "retailer") {
+                      setSelectedDistributorId("");
+                    }
+                  }}
+                  required
+                >
                   <option value="distributor">Distributor</option>
                   <option value="retailer">Retailer</option>
                 </select>
               </div>
+              {userRole === "retailer" && (
+                <div className="formGroup">
+                  <label>Select Distributor</label>
+                  <select
+                    value={selectedDistributorId}
+                    onChange={(e) => setSelectedDistributorId(e.target.value)}
+                    disabled={distributorsLoading || distributors.length === 0}
+                    required
+                  >
+                    <option value="">
+                      {distributorsLoading ? "Loading distributors..." : "Select distributor"}
+                    </option>
+                    {distributors.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} ({d.email})
+                      </option>
+                    ))}
+                  </select>
+                  {distributors.length === 0 && !distributorsLoading && (
+                    <p style={{ marginTop: "6px", color: "#dc2626", fontSize: "13px" }}>
+                      No distributors available. Please create a distributor first.
+                    </p>
+                  )}
+                  {distributorsError && (
+                    <p style={{ marginTop: "6px", color: "#dc2626", fontSize: "13px" }}>
+                      {distributorsError}
+                    </p>
+                  )}
+                  {userErrors.distributorId && (
+                    <p style={{ marginTop: "6px", color: "#dc2626", fontSize: "13px" }}>
+                      {userErrors.distributorId}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="formGroup">
                 <label>Email</label>
                 <input
@@ -335,6 +456,9 @@ export default function ManagementPage() {
                   onChange={(e) => setUserEmail(e.target.value)}
                   required
                 />
+                {userErrors.email && (
+                  <p style={{ marginTop: "6px", color: "#dc2626", fontSize: "13px" }}>{userErrors.email}</p>
+                )}
               </div>
               <div className="formGroup">
                 <label>Password</label>
@@ -345,8 +469,18 @@ export default function ManagementPage() {
                   onChange={(e) => setUserPassword(e.target.value)}
                   required
                 />
+                {userErrors.password && (
+                  <p style={{ marginTop: "6px", color: "#dc2626", fontSize: "13px" }}>{userErrors.password}</p>
+                )}
               </div>
-              <Button type="submit" variant="primary">
+              {userErrors.name && (
+                <p style={{ marginTop: "6px", color: "#dc2626", fontSize: "13px" }}>{userErrors.name}</p>
+              )}
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={userRole === "retailer" && (distributorsLoading || distributors.length === 0)}
+              >
                 Create User
               </Button>
             </form>
@@ -355,22 +489,45 @@ export default function ManagementPage() {
                 {userMessage}
               </p>
             )}
-            <h3 style={{ marginTop: "24px" }}>Created Users</h3>
+            <h3 style={{ marginTop: "24px" }}>Distributor Users</h3>
             <Table
               columns={[
-                { key: "id", label: "User ID" },
+                { key: "displayId", label: "User ID" },
                 { key: "name", label: "Name" },
                 { key: "role", label: "Role" },
                 { key: "email", label: "Email" },
-                { key: "password", label: "Password" },
+                { key: "password", label: "Password", render: () => "******" },
               ]}
-              data={users}
+              data={distributorUsers}
               onAction={(row) => (
                 <Button variant="danger" onClick={() => handleDeleteUser(row.id)}>
                   Delete
                 </Button>
               )}
-              emptyMessage="No users created yet"
+              emptyMessage="No distributor users created yet"
+            />
+
+            <h3 style={{ marginTop: "24px" }}>Retailer Users</h3>
+            <Table
+              columns={[
+                { key: "displayId", label: "User ID" },
+                { key: "name", label: "Name" },
+                { key: "role", label: "Role" },
+                {
+                  key: "distributorName",
+                  label: "Under Distributor",
+                  render: (_, row) => getDistributorNameForRetailer(row),
+                },
+                { key: "email", label: "Email" },
+                { key: "password", label: "Password", render: () => "******" },
+              ]}
+              data={retailerUsers}
+              onAction={(row) => (
+                <Button variant="danger" onClick={() => handleDeleteUser(row.id)}>
+                  Delete
+                </Button>
+              )}
+              emptyMessage="No retailer users created yet"
             />
           </div>
         );
@@ -410,7 +567,7 @@ export default function ManagementPage() {
           </div>
         </div>
 
-        <div className="cardGrid">
+        <div className="cardGrid cardGridManagement">
           <Card
             title="Distributor Orders"
             value={distributorOrders.length}
@@ -433,6 +590,13 @@ export default function ManagementPage() {
               variant="highlight"
             />
           )}
+          {financeSummary && (
+            <Card
+              title="Net Profit"
+              value={`Rs ${financeSummary.profit.toFixed(2)}`}
+              variant={financeSummary.profit >= 0 ? "success" : "danger"}
+            />
+          )}
         </div>
 
         {renderContent()}
@@ -440,3 +604,4 @@ export default function ManagementPage() {
     </>
   );
 }
+

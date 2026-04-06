@@ -2,6 +2,7 @@ from app.repositories.stock_repo import (
     add_stock_item,
     get_stock_by_id,
     get_stock_by_name,
+    get_stock_pricing,
     get_raw_stock_by_name,
     list_stock,
     transfer_stock,
@@ -72,3 +73,7 @@ async def ensure_stock_role_fields_initialized(item_name: str) -> None:
         await update_stock_item(item["id"], {"quantity": updates["managementQty"]}, "management")
         await update_stock_item(item["id"], {"quantity": updates["distributorQty"]}, "distributor")
         await update_stock_item(item["id"], {"quantity": updates["retailerQty"]}, "retailer")
+
+
+async def get_pricing_for_item(item_name: str) -> dict | None:
+    return await get_stock_pricing(item_name)

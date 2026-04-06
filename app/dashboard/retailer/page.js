@@ -9,15 +9,17 @@ import { deleteOrderById, getOrders, placeOrder } from "@/services/orderService"
 import { getStockItemsByRole, getStockSummary } from "@/services/stockService";
 import { getSummary } from "@/services/financeService";
 import { fetchLoyalty } from "@/api/stockApi";
+import { getCurrentUser } from "@/services/userService";
 
 export default function RetailerPage() {
   const [activeFeature, setActiveFeature] = useState("placeOrder");
   const [orders, setOrders] = useState([]);
   const [distributorStock, setDistributorStock] = useState([]);
   const [retailerStock, setRetailerStock] = useState([]);
-  const [loyalty, setLoyalty] = useState({ distributor: 0, retailer: 0 });
+  const [loyalty, setLoyalty] = useState({ total_purchase: 0, loyalty_points: 0 });
   const [finance, setFinance] = useState(null);
   const [stockSummary, setStockSummary] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [orderItem, setOrderItem] = useState("");
   const [orderQty, setOrderQty] = useState("");
@@ -34,15 +36,17 @@ export default function RetailerPage() {
         getStockItemsByRole("distributor"),
         getStockItemsByRole("retailer"),
         fetchLoyalty(),
-        getSummary(),
+        getSummary("retailer"),
         getStockSummary("retailer"),
       ]);
+    const me = await getCurrentUser();
     setOrders(ordersData);
     setDistributorStock(distributorStockData);
     setRetailerStock(retailerStockData);
     setLoyalty(loyaltyData);
     setFinance(financeData);
     setStockSummary(summary);
+    setCurrentUser(me);
   };
 
   const handlePlaceOrder = async (e) => {
@@ -67,7 +71,9 @@ export default function RetailerPage() {
     loadData();
   };
 
-  const myOrders = orders.filter((o) => o.fromRole === "retailer");
+  const myOrders = orders.filter(
+    (o) => o.fromRole === "retailer" && Number(o.userId) === Number(currentUser?.id)
+  );
   const approvedOrders = myOrders.filter((o) => o.status === "approved").length;
   const pendingOrders = myOrders.filter((o) => o.status === "pending").length;
 
@@ -212,10 +218,13 @@ export default function RetailerPage() {
           <div className="featureSection">
             <h2>Loyalty Points</h2>
             <div className="loyaltyDisplay">
-              <div className="loyaltyPoints">{loyalty.retailer}</div>
+              <div className="loyaltyPoints">{loyalty.loyalty_points}</div>
               <div className="loyaltyLabel">Retailer Loyalty Points</div>
+              <p style={{ marginTop: "12px", color: "var(--text-light)", fontSize: "14px" }}>
+                Total Purchase: Rs {(loyalty.total_purchase || 0).toFixed(2)}
+              </p>
               <p style={{ marginTop: "16px", color: "var(--text-light)", fontSize: "14px" }}>
-                Earn points every time your orders get approved
+                Earn 1 point for every Rs 10 spent on delivered orders
               </p>
             </div>
           </div>
@@ -266,7 +275,7 @@ export default function RetailerPage() {
           </div>
         </div>
 
-        <div className="cardGrid">
+        <div className="cardGrid cardGridRetailer">
           <Card
             title="My Total Orders"
             value={myOrders.length}
@@ -284,7 +293,7 @@ export default function RetailerPage() {
           />
           <Card
             title="Loyalty Points"
-            value={loyalty.retailer}
+            value={loyalty.loyalty_points}
             variant="highlight"
           />
           {stockSummary && (

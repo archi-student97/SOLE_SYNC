@@ -11,10 +11,27 @@ class UserPublic(BaseModel):
     email: EmailStr
     name: str
     role: str
+    distributorId: int | None = None
+    total_purchase: float = 0.0
+    loyalty_points: int = 0
 
 
 class UserManageItem(UserPublic):
     password: str
+    distributorName: str | None = None
+
+
+class DistributorOption(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+
+
+class RetailerOption(BaseModel):
+    id: int
+    name: str
+    email: EmailStr
+    distributorId: int | None = None
 
 
 class LoginResponse(BaseModel):
@@ -30,6 +47,7 @@ class UserCreateRequest(BaseModel):
     role: str
     email: EmailStr
     password: str
+    distributorId: int | None = None
 
 
 class ForgotPasswordRequest(BaseModel):

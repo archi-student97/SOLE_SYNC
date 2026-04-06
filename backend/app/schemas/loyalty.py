@@ -2,10 +2,9 @@ from pydantic import BaseModel
 
 
 class Loyalty(BaseModel):
-    distributor: int
-    retailer: int
+    total_purchase: float
+    loyalty_points: int
 
 
 class LoyaltyUpdate(BaseModel):
-    role: str
     points: int

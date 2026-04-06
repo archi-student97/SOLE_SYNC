@@ -1,161 +1,232 @@
-# Sole Sync - Supply Chain Management System
+# Sole Sync
 
-A web-based supply chain management system for shoe distribution, built with Next.js. It supports three user roles — Management, Distributor, and Retailer — with features for order management, stock tracking, loyalty points, schemes, and finance overview.
+Sole Sync is a full-stack supply chain management app for three roles:
+- Management
+- Distributor
+- Retailer
+
+Frontend is built with Next.js, backend is built with FastAPI, and data is stored in MongoDB.
 
 ## Tech Stack
 
-- **Framework:** Next.js 14.2.21 (App Router)
-- **Language:** JavaScript (JSX)
-- **UI:** React 18.3.1 with CSS Modules
-- **Data Storage:** Browser localStorage (no backend server)
-- **Path Aliasing:** `@/*` mapped to project root via `jsconfig.json`
+- Frontend: Next.js 14.2.21, React 18
+- Backend: FastAPI (Python)
+- Database: MongoDB
+- Auth: JWT token-based login
+
+## Main Features
+
+- Role-based login (management, distributor, retailer)
+- Forgot password (email + new password, no OTP)
+- Management can create/view/delete users
+- Order placement and approval workflow
+- Stock tracking and stock adjustments by role
+- Soft delete for orders (`isDeleted`)
+- Loyalty points based on purchase amount:
+  - counts completed orders (`approved` / `delivered` / `completed`)
+  - excludes soft-deleted orders
+  - 1 point for every Rs 10 spent
+- Net profit calculated per dashboard role and updated on refresh
 
 ## Project Structure
 
-```
-sole-sync/
-├── app/
-│   ├── globals.css                  # Global styles (login, dashboard, forms, tables, etc.)
-│   ├── layout.js                    # Root layout (metadata, html/body wrapper)
-│   ├── page.js                      # Login page (email/password auth with demo accounts)
-│   └── dashboard/
-│       ├── layout.js                # Dashboard layout (auth guard, redirects if not logged in)
-│       ├── page.js                  # Dashboard redirect (routes to role-specific page)
-│       ├── management/
-│       │   └── page.js              # Management dashboard (orders, stock, schemes, monitor)
-│       ├── distributor/
-│       │   └── page.js              # Distributor dashboard (orders, stock, loyalty, finance)
-│       └── retailer/
-│           └── page.js              # Retailer dashboard (orders, stock, loyalty, finance)
-├── components/
-│   ├── Button.js                    # Reusable button component (primary, success, danger variants)
-│   ├── Button.module.css            # Button styles
-│   ├── Card.js                      # Reusable card component (title, value, variants)
-│   ├── Card.module.css              # Card styles
-│   ├── Table.js                     # Reusable table component (columns, data, actions)
-│   ├── Table.module.css             # Table styles
-│   ├── Sidebar.js                   # Sidebar navigation (role-based menus, logout)
-│   └── Sidebar.module.css           # Sidebar styles
-├── api/
-│   ├── api.js                       # Storage initialization (seeds defaults if empty)
-│   ├── userApi.js                   # User API (authenticate, getAuthState, logout)
-│   ├── orderApi.js                  # Order API (fetch, create, update status, delete)
-│   └── stockApi.js                  # Stock/Schemes/Loyalty/Finance API (CRUD operations)
-├── services/
-│   ├── userService.js               # User service (authenticate, getCurrentUser, isLoggedIn, logout)
-│   ├── orderService.js              # Order service (place, approve, reject, forward orders)
-│   ├── stockService.js              # Stock service (get items, adjust, summary, add new)
-│   └── financeService.js            # Finance service (revenue, expenses, profit, transactions)
-├── lib/
-│   └── storage.js                   # localStorage wrapper (getData, setData, removeData, clearAll)
-├── utils/
-│   └── constants.js                 # App constants (storage keys, roles, defaults for users/stock/finance)
-├── public/
-│   ├── file.svg
-│   ├── globe.svg
-│   ├── next.svg
-│   ├── vercel.svg
-│   └── window.svg
-├── jsconfig.json                    # Path alias config (@/* -> ./*)
-├── next.config.mjs                  # Next.js config (empty defaults)
-├── package.json                     # Project metadata and dependencies
-└── README.md                        # This file
+```text
+copy/
+  app/                  # Next.js App Router pages
+  components/           # Reusable UI components
+  services/             # Frontend service layer
+  api/                  # Frontend API wrappers
+  backend/              # FastAPI backend
+    app/
+      api/v1/routes/    # REST endpoints
+      services/         # Business services
+      repositories/     # MongoDB access
+      schemas/          # Pydantic schemas
+      models/           # Seed/default models
 ```
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
+- Node.js 18+
+- Python 3.10+
+- MongoDB running locally (or remote URI)
 
-- Node.js 18.17 or later
-- npm, yarn, pnpm, or bun
+## Environment Setup
 
-### Step 1: Clone the Repository
+### 1) Frontend `.env.local` (project root)
 
-```bash
-git clone <repository-url>
-cd sole-sync
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8070/api/v1
 ```
 
-### Step 2: Install Dependencies
+### 2) Backend `.env` (`backend/.env`)
 
-```bash
+If missing:
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+```
+
+Typical values:
+
+```env
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DB_NAME=sole_sync
+JWT_SECRET_KEY=change_me_in_production
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=120
+CORS_ORIGINS=http://localhost:3000
+```
+
+## Run the Project
+
+Open two terminals in VS Code.
+
+### Terminal 1: Start backend
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8070 --reload
+```
+
+Optional (from project root):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-backend.ps1
+```
+
+Backend:
+- Health: http://localhost:8070/health
+- Docs: http://localhost:8070/docs
+
+### Terminal 2: Start frontend
+
+```powershell
+cd ..
 npm install
-```
-
-### Step 3: Run the Development Server
-
-```bash
 npm run dev
 ```
 
-### Step 4: Open in Browser
+Open app:
+- http://localhost:3000
 
-Navigate to [http://localhost:3000](http://localhost:3000)
+## Stop the Project
 
-### Step 5: Login with a Demo Account
+- In each running terminal, press `Ctrl + C`
 
-Use one of the pre-configured demo accounts:
+## Default Admin Login
 
-| Role         | Email              | Password    |
-|-------------|--------------------|-------------|
-| Management  | admin@sole.com     | admin123    |
-| Distributor | dist@sole.com      | dist123     |
-| Retailer    | retail@sole.com    | retail123   |
+- Email: `admin@sole.com`
+- Password: `admin@13`
 
-Or click on a demo account on the login page to auto-fill credentials.
+Then create distributor/retailer users from Management dashboard.
 
-### Step 6: Explore the Dashboard
+## Key APIs
 
-After logging in, you will be redirected to the role-specific dashboard.
+### Auth
+- `POST /api/v1/login`
+- `POST /api/v1/forgot-password`
+- `POST /api/v1/users` (management only)
+- `GET /api/v1/users` (management only)
+- `DELETE /api/v1/users/{user_id}` (management only)
+- `GET /api/v1/auth/me`
 
-## Available Scripts
+### Orders
+- `GET /api/v1/orders`
+- `POST /api/v1/orders`
+- `PATCH /api/v1/orders/{order_id}/status`
+- `DELETE /api/v1/orders/{order_id}` (soft delete)
 
-```bash
-npm run dev      # Start the development server
-npm run build    # Build for production
-npm run start    # Start the production server
+### Loyalty
+- `GET /api/v1/loyalty`
+- Response:
+```json
+{
+  "total_purchase": 0,
+  "loyalty_points": 0
+}
 ```
 
-## User Roles & Features
+### Finance
+- `GET /api/v1/finance/summary?role=management`
+- `GET /api/v1/finance/summary?role=distributor`
+- `GET /api/v1/finance/summary?role=retailer`
 
-### Management
-- **Take Orders** — View and approve/reject orders from distributors
-- **Stock Management** — View stock summary, adjust quantities
-- **Create Schemes** — Create promotional schemes with discounts and validity
-- **Monitor Orders** — View all orders with status breakdown
+## Manual Test Checklist
 
-### Distributor
-- **Take Orders** — View orders from retailers, forward to management
-- **Place Order** — Place orders to management
-- **Loyalty Points** — View distributor loyalty points
-- **Track Stock** — View stock items and total value
-- **Finance** — View revenue, expenses, net profit, and transactions
+1. Login as admin
+2. Create distributor and retailer users
+3. Place order (retailer -> distributor)
+4. Approve order (distributor)
+5. Verify stock updates
+6. Verify loyalty updates (purchase + points)
+7. Verify net profit card changes after order updates
+8. Soft delete an approved order and confirm it disappears from UI but remains in DB with `isDeleted: true`
 
-### Retailer
-- **Place Order** — Place orders to distributors
-- **Track Stock** — View stock items and total value
-- **Loyalty Points** — View retailer loyalty points
-- **Finance** — View revenue, expenses, net profit, and transactions
+## Common Issues
 
-## Architecture
+### "Another next dev server is already running"
 
-The application follows a layered architecture:
+Stop old process:
 
-1. **Pages** (`app/`) — Next.js App Router pages with client-side rendering
-2. **Components** (`components/`) — Reusable UI components (Button, Card, Table, Sidebar)
-3. **Services** (`services/`) — Business logic layer that orchestrates API calls
-4. **API** (`api/`) — Data access layer that reads/writes to localStorage
-5. **Lib** (`lib/`) — Utility functions (localStorage wrapper)
-6. **Utils** (`utils/`) — Constants and default data
-
-Data persistence is handled entirely through the browser's `localStorage`. The `initStorage()` function in `api/api.js` seeds default data on first load.
-
-## Order Flow
-
-```
-Retailer → places order → Distributor
-Distributor → forwards order → Management
-Management → approves/rejects order
+```powershell
+taskkill /PID <PID> /F
 ```
 
-When an order is approved, the retailer earns 10 loyalty points.
+Then run `npm run dev` once.
+
+### "Cannot connect to backend at http://localhost:8070/api/v1"
+
+This means frontend is running but backend is not reachable.
+
+Check backend:
+
+```powershell
+Invoke-WebRequest http://127.0.0.1:8070/health -UseBasicParsing
+```
+
+If it fails, start backend:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-backend.ps1
+```
+
+Then hard refresh browser (`Ctrl + F5`).
+
+### Pytest folders like `pytest-cache-files-*`
+
+These are temporary test cache folders and safe to remove:
+
+```powershell
+Remove-Item -Recurse -Force .\pytest-cache-files-* -ErrorAction SilentlyContinue
+```
+
+### Frontend still shows old data
+
+- Hard refresh: `Ctrl + F5`
+- Logout and login again
+
+## GitHub Push (Quick)
+
+```powershell
+git status
+git add .
+git commit -m "Your message"
+git push -u origin main
+```
+
+If your branch is not `main`:
+
+```powershell
+git branch --show-current
+git push -u origin <your-branch-name>
+```
+
+If remote is not configured yet:
+
+```powershell
+git remote add origin https://github.com/<your-username>/<repo-name>.git
+```

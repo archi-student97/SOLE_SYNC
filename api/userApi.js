@@ -6,6 +6,14 @@ export async function fetchUsers() {
   return await httpClient.get("/users");
 }
 
+export async function fetchDistributors() {
+  return await httpClient.get("/users/distributors");
+}
+
+export async function fetchMyRetailers() {
+  return await httpClient.get("/users/my-retailers");
+}
+
 export async function authenticateUser(email, password) {
   try {
     const response = await httpClient.post("/login", { email, password });
@@ -44,8 +52,8 @@ export async function logoutUser() {
   removeData(STORAGE_KEYS.AUTH);
 }
 
-export async function createUser(name, role, email, password) {
-  return await httpClient.post("/users", { name, role, email, password });
+export async function createUser(name, role, email, password, distributorId = null) {
+  return await httpClient.post("/users", { name, role, email, password, distributorId });
 }
 
 export async function forgotPassword(email, newPassword) {

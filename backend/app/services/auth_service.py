@@ -5,9 +5,12 @@ from app.core.security import create_access_token, hash_password, verify_passwor
 from app.repositories.users_repo import (
     create_user,
     delete_user_by_id,
+    get_distributors_for_management,
+    get_retailers_for_distributor,
     get_user_by_email,
     get_user_by_id,
     get_users_for_management,
+    set_plain_password_for_user,
     update_user_password,
 )
 
@@ -18,6 +21,9 @@ def _to_public_user(user: dict) -> dict:
         "email": user["email"],
         "name": user["name"],
         "role": user["role"],
+        "distributorId": user.get("distributorId"),
+        "total_purchase": float(user.get("total_purchase", 0.0)),
+        "loyalty_points": int(user.get("loyalty_points", 0)),
     }
 
 
@@ -25,6 +31,10 @@ async def authenticate_user(email: str, password: str) -> dict:
     user = await get_user_by_email(email)
     if not user or not verify_password(password, user["password"]):
         return {"success": False, "error": "Invalid email or password"}
+
+    # Backfill plainPassword for legacy distributor/retailer users so management can view credentials.
+    if user.get("role") in {"distributor", "retailer"} and not user.get("plainPassword"):
+        await set_plain_password_for_user(user["id"], password)
 
     public_user = _to_public_user(user)
     token = create_access_token({"sub": str(user["id"])})
@@ -52,7 +62,9 @@ async def get_user_from_token(token: str) -> dict | None:
     return _to_public_user(user)
 
 
-async def create_user_account(name: str, role: str, email: str, password: str) -> dict:
+async def create_user_account(
+    name: str, role: str, email: str, password: str, distributor_id: int | None = None
+) -> dict:
     normalized_role = role.lower().strip()
     if normalized_role not in {"distributor", "retailer"}:
         return {"success": False, "error": "Role must be distributor or retailer"}
@@ -61,6 +73,13 @@ async def create_user_account(name: str, role: str, email: str, password: str) -
     if existing:
         return {"success": False, "error": "User already exists with this email"}
 
+    if normalized_role == "retailer":
+        if distributor_id is None:
+            return {"success": False, "error": "Distributor selection is required for retailer"}
+        distributor = await get_user_by_id(int(distributor_id))
+        if not distributor or distributor.get("role") != "distributor":
+            return {"success": False, "error": "Selected distributor not found"}
+
     created = await create_user(
         {
             "name": name,
@@ -68,6 +87,7 @@ async def create_user_account(name: str, role: str, email: str, password: str) -
             "email": email,
             "password": hash_password(password),
             "plainPassword": password,
+            "distributorId": int(distributor_id) if normalized_role == "retailer" else None,
         }
     )
     return {"success": True, "user": created}
@@ -93,6 +113,14 @@ async def reset_password(email: str, new_password: str) -> dict:
 
 async def list_users_for_management() -> list[dict]:
     return await get_users_for_management()
+
+
+async def list_distributors_for_management() -> list[dict]:
+    return await get_distributors_for_management()
+
+
+async def list_retailers_for_distributor(distributor_id: int) -> list[dict]:
+    return await get_retailers_for_distributor(distributor_id)
 
 
 async def remove_user_account(user_id: int) -> dict:

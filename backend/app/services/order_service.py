@@ -3,10 +3,11 @@ from app.repositories.orders_repo import (
     delete_order,
     get_order,
     list_orders,
+    mark_order_loyalty_credited,
     update_order_status,
 )
-from app.services.loyalty_service import update_loyalty_points
-from app.services.stock_service import check_stock_availability, transfer_stock_between_roles
+from app.services.loyalty_service import apply_loyalty_for_delivered_order
+from app.services.stock_service import check_stock_availability, get_pricing_for_item, transfer_stock_between_roles
 
 ORDER_STATUS = {
     "PENDING": "pending",
@@ -14,6 +15,8 @@ ORDER_STATUS = {
     "REJECTED": "rejected",
     "FORWARDED": "forwarded",
 }
+
+COMPLETED_STATUSES = {"approved", "delivered", "completed"}
 
 
 async def get_orders() -> list[dict]:
@@ -38,11 +41,36 @@ async def get_orders_by_role(role: str) -> list[dict]:
 
 async def place_order(order_data: dict) -> dict:
     order_data["status"] = ORDER_STATUS["PENDING"]
+    pricing = await get_pricing_for_item(order_data["itemName"])
+    if pricing:
+        from_role = str(order_data.get("fromRole", "")).lower()
+        to_role = str(order_data.get("toRole", "")).lower()
+        qty = int(order_data.get("quantity") or 0)
+        if from_role == "distributor" and to_role == "management":
+            unit_price = float(pricing["managementSellPrice"])
+            order_data["unitPrice"] = unit_price
+            order_data["totalPrice"] = round(unit_price * qty, 2)
+        elif from_role == "retailer" and to_role == "distributor":
+            unit_price = float(pricing["distributorSellPrice"])
+            order_data["unitPrice"] = unit_price
+            order_data["totalPrice"] = round(unit_price * qty, 2)
     return await create_order(order_data)
 
 
 async def set_order_status(order_id: int, status: str) -> dict | None:
-    return await update_order_status(order_id, status)
+    previous = await get_order(order_id)
+    updated = await update_order_status(order_id, status)
+    if not previous or not updated:
+        return updated
+
+    prev_status = (previous.get("status") or "").lower()
+    new_status = (updated.get("status") or "").lower()
+    became_completed = prev_status not in COMPLETED_STATUSES and new_status in COMPLETED_STATUSES
+    if became_completed:
+        credited = await apply_loyalty_for_delivered_order(updated)
+        if credited:
+            updated = await mark_order_loyalty_credited(order_id) or updated
+    return updated
 
 
 async def remove_order(order_id: int) -> bool:
@@ -59,21 +87,23 @@ async def approve_order_by_distributor(order_id: int) -> dict:
         return {"success": False, "reason": "insufficient_stock"}
 
     await transfer_stock_between_roles(order["itemName"], "distributor", "retailer", order["quantity"])
-    updated = await update_order_status(order_id, ORDER_STATUS["APPROVED"])
-    if updated and updated["fromRole"] == "retailer":
-        await update_loyalty_points("retailer", 10)
+    updated = await set_order_status(order_id, ORDER_STATUS["APPROVED"])
     return {"success": True, "order": updated}
 
 
-async def request_restock_from_management(order_id: int, order_data: dict) -> dict:
+async def request_restock_from_management(order_id: int, order_data: dict, user_id: int | None = None) -> dict:
+    pricing = await get_pricing_for_item(order_data["itemName"])
+    qty = int(order_data.get("quantity") or 0)
+    mgmt_unit_price = float(pricing["managementSellPrice"]) if pricing else float(order_data.get("unitPrice", 0))
     return await create_order(
         {
             "itemName": order_data["itemName"],
-            "quantity": order_data["quantity"],
-            "totalPrice": order_data["totalPrice"],
-            "unitPrice": order_data["unitPrice"],
+            "quantity": qty,
+            "totalPrice": round(mgmt_unit_price * qty, 2),
+            "unitPrice": mgmt_unit_price,
             "fromRole": "distributor",
             "toRole": "management",
+            "userId": user_id,
             "status": ORDER_STATUS["PENDING"],
             "linkedOrderId": order_id,
         }
@@ -82,7 +112,7 @@ async def request_restock_from_management(order_id: int, order_data: dict) -> di
 
 async def approve_order_management(order_id: int) -> dict | None:
     order = await get_order(order_id)
-    updated = await update_order_status(order_id, ORDER_STATUS["APPROVED"])
+    updated = await set_order_status(order_id, ORDER_STATUS["APPROVED"])
     if not order:
         return updated
 
@@ -100,13 +130,7 @@ async def approve_order_management(order_id: int) -> dict | None:
             stock_result = await check_stock_availability(linked["itemName"], linked["quantity"], "distributor")
             if stock_result["available"]:
                 await transfer_stock_between_roles(linked["itemName"], "distributor", "retailer", linked["quantity"])
-                await update_order_status(linked["id"], ORDER_STATUS["APPROVED"])
-                if linked["fromRole"] == "retailer":
-                    await update_loyalty_points("retailer", 10)
-
-    if updated and updated["fromRole"] == "retailer":
-        await update_loyalty_points("retailer", 10)
-
+                await set_order_status(linked["id"], ORDER_STATUS["APPROVED"])
     return updated
 
 

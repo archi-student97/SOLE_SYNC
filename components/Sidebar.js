@@ -81,6 +81,7 @@ const roleMenus = {
   ],
   distributor: [
     { label: "Take Orders", feature: "takeOrders", icon: icons.clipboard },
+    { label: "My Retailers", feature: "myRetailers", icon: icons.shoppingCart },
     { label: "Place Order", feature: "placeOrder", icon: icons.send },
     { label: "Loyalty Points", feature: "loyalty", icon: icons.star },
     { label: "Track Stock", feature: "stock", icon: icons.box },

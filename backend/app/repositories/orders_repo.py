@@ -16,11 +16,13 @@ def _normalize_order(doc: dict | None) -> dict | None:
         "unitPrice": doc.get("unitPrice", doc.get("unit_price")),
         "fromRole": doc.get("fromRole", doc.get("from_role")),
         "toRole": doc.get("toRole", doc.get("to_role")),
+        "userId": doc.get("userId", doc.get("user_id")),
         "status": doc.get("status", "pending"),
         "linkedOrderId": doc.get("linkedOrderId", doc.get("linked_order_id")),
         "createdAt": doc.get("createdAt", doc.get("created_at")),
         "updatedAt": doc.get("updatedAt", doc.get("updated_at")),
         "isDeleted": doc.get("isDeleted", False),
+        "loyaltyCredited": doc.get("loyaltyCredited", False),
     }
     return normalized
 
@@ -52,6 +54,7 @@ async def create_order(order_data: dict) -> dict:
         "createdAt": now,
         "updatedAt": None,
         "isDeleted": False,
+        "loyaltyCredited": False,
     }
     await db.orders.insert_one(new_order)
     return _normalize_order(new_order)
@@ -75,3 +78,31 @@ async def delete_order(order_id: int) -> bool:
         {"$set": {"isDeleted": True, "updatedAt": now}},
     )
     return result.modified_count > 0
+
+
+async def mark_order_loyalty_credited(order_id: int) -> dict | None:
+    db = get_db()
+    now = datetime.now(timezone.utc)
+    await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {"loyaltyCredited": True, "updatedAt": now}},
+    )
+    return await get_order(order_id)
+
+
+async def summarize_completed_orders_for_user(user_id: int, role: str | None = None) -> dict:
+    db = get_db()
+    docs = await db.orders.find(
+        {
+            "userId": user_id,
+            "status": {"$in": ["approved", "delivered", "completed"]},
+            "$or": [{"isDeleted": {"$exists": False}}, {"isDeleted": False}],
+        },
+        {"_id": 0, "totalPrice": 1},
+    ).to_list(length=None)
+
+    total_purchase = 0.0
+    for doc in docs:
+        total_purchase += float(doc.get("totalPrice", 0.0) or 0.0)
+    loyalty_points = int(total_purchase // 10)
+    return {"total_purchase": total_purchase, "loyalty_points": loyalty_points}

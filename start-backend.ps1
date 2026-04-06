@@ -1,7 +1,7 @@
-$port = 8010
+$port = 8070
 $backendDir = "c:\Users\archi\OneDrive\Desktop\copy\backend"
 $logDir = Join-Path $backendDir "logs"
-$logFile = Join-Path $logDir "uvicorn-8010.log"
+$logFile = Join-Path $logDir "uvicorn-8070.log"
 
 if (!(Test-Path $logDir)) {
   New-Item -ItemType Directory -Path $logDir | Out-Null

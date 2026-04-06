@@ -52,15 +52,15 @@ export async function fetchLoyalty() {
   try {
     return await httpClient.get("/loyalty");
   } catch {
-    return { distributor: 0, retailer: 0 };
+    return { total_purchase: 0, loyalty_points: 0 };
   }
 }
 
 export async function updateLoyalty(role, points) {
   try {
-    return await httpClient.post("/loyalty/update", { role, points });
+    return await httpClient.post("/loyalty/update", { points });
   } catch {
-    return { distributor: 0, retailer: 0 };
+    return { total_purchase: 0, loyalty_points: 0 };
   }
 }
 
@@ -72,9 +72,10 @@ export async function fetchFinance() {
   }
 }
 
-export async function fetchFinanceSummary() {
+export async function fetchFinanceSummary(role = "") {
   try {
-    return await httpClient.get("/finance/summary");
+    const query = role ? `?role=${encodeURIComponent(role)}` : "";
+    return await httpClient.get(`/finance/summary${query}`);
   } catch {
     return { revenue: 0, expenses: 0, profit: 0, transactions: [] };
   }

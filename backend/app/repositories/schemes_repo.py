@@ -3,9 +3,32 @@ from datetime import datetime, timezone
 from app.db.mongodb import get_db
 
 
+def _normalize_scheme(doc: dict | None) -> dict | None:
+    if not doc:
+        return None
+
+    created_at = doc.get("createdAt", doc.get("created_at"))
+    if isinstance(created_at, str):
+        try:
+            created_at = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+        except ValueError:
+            created_at = datetime.now(timezone.utc)
+    elif created_at is None:
+        created_at = datetime.now(timezone.utc)
+
+    return {
+        "id": doc.get("id"),
+        "name": doc.get("name"),
+        "discount": doc.get("discount"),
+        "validity": doc.get("validity"),
+        "createdAt": created_at,
+    }
+
+
 async def list_schemes() -> list[dict]:
     db = get_db()
-    return await db.schemes.find({}, {"_id": 0}).sort("createdAt", -1).to_list(length=None)
+    docs = await db.schemes.find({}, {"_id": 0}).sort("createdAt", -1).to_list(length=None)
+    return [_normalize_scheme(doc) for doc in docs]
 
 
 async def create_scheme(scheme_data: dict) -> dict:
@@ -17,7 +40,7 @@ async def create_scheme(scheme_data: dict) -> dict:
         "createdAt": now,
     }
     await db.schemes.insert_one(new_scheme)
-    return new_scheme
+    return _normalize_scheme(new_scheme)
 
 
 async def delete_scheme(scheme_id: int) -> bool:

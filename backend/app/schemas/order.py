@@ -9,9 +9,11 @@ class OrderBase(BaseModel):
     unitPrice: float
     fromRole: str
     toRole: str
+    userId: int | None = None
     status: str = "pending"
     linkedOrderId: int | None = None
     isDeleted: bool = False
+    loyaltyCredited: bool = False
 
 
 class OrderCreate(OrderBase):

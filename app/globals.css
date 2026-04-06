@@ -1,17 +1,17 @@
 :root {
-  --primary: #4f46e5;
-  --primary-dark: #4338ca;
-  --primary-light: #e0e7ff;
-  --secondary: #475569;
-  --bg: #f1f5f9;
+  --primary: #0f766e;
+  --primary-dark: #115e59;
+  --primary-light: #ccfbf1;
+  --secondary: #334155;
+  --bg: #eef2f7;
   --bg-white: #ffffff;
-  --sidebar-bg: #1e293b;
-  --text: #1e293b;
+  --sidebar-bg: #0f172a;
+  --text: #0f172a;
   --text-light: #64748b;
-  --border: #e2e8f0;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+  --border: #dbe3ee;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
 }
 
 * {
@@ -21,12 +21,14 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
+  font-family: "Poppins", "Segoe UI", "Trebuchet MS", sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(15, 118, 110, 0.07) 0%, transparent 35%),
+    radial-gradient(circle at 85% 0%, rgba(14, 165, 233, 0.06) 0%, transparent 30%);
 }
 
 html,
@@ -59,7 +61,7 @@ textarea {
   position: relative;
   width: 50%;
   min-height: 100vh;
-  background: linear-gradient(160deg, #0f172a 0%, #1e293b 40%, #312e81 100%);
+  background: linear-gradient(155deg, #071125 0%, #0f172a 35%, #0d9488 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -73,9 +75,9 @@ textarea {
   bottom: 0;
   left: 0;
   background:
-    radial-gradient(ellipse at 20% 50%, rgba(79, 70, 229, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at 60% 80%, rgba(129, 140, 248, 0.08) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 50%, rgba(20, 184, 166, 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(14, 165, 233, 0.14) 0%, transparent 50%),
+    radial-gradient(ellipse at 60% 80%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
   z-index: 1;
 }
 
@@ -154,7 +156,7 @@ textarea {
   position: relative;
   z-index: 2;
   padding: 32px;
-  max-width: 480px;
+  max-width: 560px;
 }
 
 .loginBrand {
@@ -162,6 +164,10 @@ textarea {
   align-items: center;
   gap: 22px;
   margin-bottom: 0;
+}
+
+.loginBrandRow {
+  margin-bottom: 24px;
 }
 
 .loginBrandIcon {
@@ -186,27 +192,99 @@ textarea {
 }
 
 .loginBrandName {
-  font-size: 36px;
-  font-weight: 700;
-  color: white;
-  letter-spacing: -0.3px;
-}
-
-.loginTagline {
   font-size: 38px;
   font-weight: 800;
   color: white;
+  letter-spacing: -0.6px;
+}
+
+.loginTagline {
+  font-size: 42px;
+  font-weight: 800;
+  color: white;
   line-height: 1.15;
-  letter-spacing: -0.5px;
-  margin-bottom: 20px;
+  letter-spacing: -0.7px;
+  margin-bottom: 14px;
 }
 
 .loginDescription {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.78);
   line-height: 1.7;
-  margin-bottom: 40px;
-  max-width: 400px;
+  margin-bottom: 22px;
+  max-width: 500px;
+}
+
+.shoeGallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.shoeCard {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  padding: 10px;
+  backdrop-filter: blur(5px);
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.shoeCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.shoeBrand {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.shoeImage {
+  width: 100%;
+  height: 78px;
+  object-fit: contain;
+  margin: 6px 0;
+  filter: drop-shadow(0 8px 14px rgba(2, 6, 23, 0.35));
+}
+
+.shoeMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.shoeMeta strong {
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  line-height: 1.3;
+}
+
+.shoeMeta span {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.brandChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.brandChips span {
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.86);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
 }
 
 .loginFeatures {
@@ -243,14 +321,14 @@ textarea {
 
 .loginCard {
   background: white;
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 40px;
   width: 100%;
   max-width: 420px;
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.04),
     0 6px 16px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f1f5f9;
+  border: 1px solid #e4ecf7;
 }
 
 .loginMobileLogo {
@@ -265,15 +343,15 @@ textarea {
 }
 
 .loginFormHeader h2 {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 30px;
+  font-weight: 800;
   color: var(--text);
   margin-bottom: 6px;
   letter-spacing: -0.3px;
 }
 
 .loginFormHeader p {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-light);
 }
 
@@ -316,7 +394,7 @@ textarea {
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -369,6 +447,31 @@ textarea {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.loginSuccessMsg {
+  margin-top: 12px;
+  color: #059669;
+  font-size: 14px;
+  text-align: center;
+}
+
+.loginToggleWrap {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.loginToggleBtn {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.loginToggleBtn:hover {
+  color: var(--primary-dark);
 }
 
 /* Demo Accounts */
@@ -468,18 +571,18 @@ textarea {
 .dashboardLayout {
   display: flex;
   min-height: 100vh;
-  background: #f8fafc;
+  background: transparent;
 }
 
 .mainContent {
   flex: 1;
   margin-left: 260px;
-  padding: 32px;
+  padding: 28px;
   min-height: 100vh;
 }
 
 .pageHeader {
-  margin-bottom: 28px;
+  margin-bottom: 22px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -488,24 +591,37 @@ textarea {
 }
 
 .pageHeader h1 {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 34px;
+  font-weight: 800;
   color: var(--text);
-  letter-spacing: -0.3px;
+  letter-spacing: -0.8px;
+  line-height: 1.1;
 }
 
 .pageHeader p {
   color: var(--text-light);
-  font-size: 14px;
-  margin-top: 4px;
+  font-size: 15px;
+  margin-top: 6px;
 }
 
 /* Grid layouts */
 .cardGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 28px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.cardGrid.cardGridRetailer {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.cardGrid.cardGridDistributor {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.cardGrid.cardGridManagement {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .roleGrid {
@@ -552,29 +668,29 @@ textarea {
 /* Feature sections */
 .featureSection {
   background: white;
-  border-radius: 12px;
+  border-radius: 18px;
   padding: 24px;
-  border: 1px solid #f1f5f9;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
 }
 
 .featureSection h2 {
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
   margin-bottom: 20px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #e8eef6;
   color: var(--text);
-  letter-spacing: -0.2px;
+  letter-spacing: -0.4px;
 }
 
 .featureSection h3 {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--text);
   margin-top: 28px;
   margin-bottom: 16px;
-  letter-spacing: -0.1px;
+  letter-spacing: -0.2px;
 }
 
 /* Form styles */
@@ -584,7 +700,7 @@ textarea {
   gap: 16px;
   margin-bottom: 24px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #e8eef6;
 }
 
 .orderForm .formGroup {
@@ -595,9 +711,9 @@ textarea {
 .orderForm input[type="text"],
 .orderForm input[type="number"] {
   width: 100%;
-  padding: 11px 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border: 1px solid #d5deea;
+  border-radius: 12px;
   font-size: 13px;
   outline: none;
   background: white;
@@ -611,7 +727,7 @@ textarea {
 }
 
 .orderForm input:disabled {
-  background: #f8fafc;
+  background: #f1f5f9;
   color: var(--text-light);
   cursor: not-allowed;
 }
@@ -626,8 +742,8 @@ textarea {
 /* Status badges */
 .statusBadge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
+  padding: 5px 12px;
+  border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
   text-transform: capitalize;
@@ -635,8 +751,8 @@ textarea {
 }
 
 .statusPending {
-  background: #fef3c7;
-  color: #92400e;
+  background: #ffedd5;
+  color: #9a3412;
 }
 
 .statusApproved {
@@ -645,13 +761,13 @@ textarea {
 }
 
 .statusRejected {
-  background: #fee2e2;
+  background: #ffe4e6;
   color: #991b1b;
 }
 
 .statusForwarded {
-  background: #dbeafe;
-  color: #1e40af;
+  background: #e0f2fe;
+  color: #0c4a6e;
 }
 
 /* Stock management */
@@ -664,8 +780,8 @@ textarea {
 .stockBtn {
   width: 30px;
   height: 30px;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  border: 1px solid #d5deea;
   background: white;
   cursor: pointer;
   font-size: 16px;
@@ -691,7 +807,7 @@ textarea {
   align-items: end;
   margin-bottom: 24px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid #e8eef6;
 }
 
 .schemeForm .formGroup {
@@ -701,9 +817,9 @@ textarea {
 .schemeForm input,
 .schemeForm select {
   width: 100%;
-  padding: 11px 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  padding: 12px 14px;
+  border: 1px solid #d5deea;
+  border-radius: 12px;
   font-size: 13px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -718,11 +834,14 @@ textarea {
 /* Loyalty display */
 .loyaltyDisplay {
   text-align: center;
-  padding: 48px 24px;
+  padding: 52px 24px;
+  background: linear-gradient(135deg, #f8fafc, #f0fdfa);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
 }
 
 .loyaltyPoints {
-  font-size: 72px;
+  font-size: 78px;
   font-weight: 800;
   color: var(--primary);
   margin-bottom: 8px;
@@ -745,9 +864,9 @@ textarea {
 }
 
 .filterTab {
-  padding: 7px 16px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid #d5deea;
   background: white;
   cursor: pointer;
   font-size: 12px;
@@ -765,6 +884,7 @@ textarea {
   background: var(--primary);
   color: white;
   border-color: var(--primary);
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.24);
 }
 
 .filterTabActive:hover {
@@ -869,10 +989,11 @@ textarea {
   .loginDescription {
     font-size: 14px;
     margin-bottom: 24px;
-    display: none;
   }
 
-  .loginFeatures {
+  .loginFeatures,
+  .shoeGallery,
+  .brandChips {
     display: none;
   }
 
@@ -912,6 +1033,18 @@ textarea {
 
   .schemeForm {
     grid-template-columns: 1fr;
+  }
+
+  .cardGrid.cardGridRetailer {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  }
+
+  .cardGrid.cardGridDistributor {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  }
+
+  .cardGrid.cardGridManagement {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   }
 }
 

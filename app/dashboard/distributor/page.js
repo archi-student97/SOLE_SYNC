@@ -14,14 +14,18 @@ import {
 import { getStockItemsByRole, checkStockAvailability } from "@/services/stockService";
 import { getSummary } from "@/services/financeService";
 import { fetchLoyalty } from "@/api/stockApi";
+import { getCurrentUser, getMyRetailersUnderDistributor } from "@/services/userService";
 
 export default function DistributorPage() {
   const [activeFeature, setActiveFeature] = useState("takeOrders");
   const [orders, setOrders] = useState([]);
   const [stock, setStock] = useState([]);
-  const [loyalty, setLoyalty] = useState({ distributor: 0, retailer: 0 });
+  const [retailers, setRetailers] = useState([]);
+  const [loyalty, setLoyalty] = useState({ total_purchase: 0, loyalty_points: 0 });
   const [finance, setFinance] = useState(null);
   const [stockAvailability, setStockAvailability] = useState({});
+  const [loadError, setLoadError] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [orderItem, setOrderItem] = useState("");
   const [orderQty, setOrderQty] = useState("");
@@ -32,23 +36,57 @@ export default function DistributorPage() {
   }, []);
 
   const loadData = async () => {
-    const [ordersData, stockData, loyaltyData, financeData] =
-      await Promise.all([
-        getOrders(),
-        getStockItemsByRole("distributor"),
-        fetchLoyalty(),
-        getSummary(),
-      ]);
-    setOrders(ordersData);
-    setStock(stockData);
-    setLoyalty(loyaltyData);
+    setLoadError("");
+    const results = await Promise.allSettled([
+      getOrders(),
+      getStockItemsByRole("distributor"),
+      fetchLoyalty(),
+      getSummary("distributor"),
+      getMyRetailersUnderDistributor(),
+      getCurrentUser(),
+    ]);
+
+    const ordersData = results[0].status === "fulfilled" ? results[0].value : [];
+    const stockData = results[1].status === "fulfilled" ? results[1].value : [];
+    const loyaltyData =
+      results[2].status === "fulfilled"
+        ? results[2].value
+        : { total_purchase: 0, loyalty_points: 0 };
+    const financeData = results[3].status === "fulfilled" ? results[3].value : null;
+    const retailersData = results[4].status === "fulfilled" ? results[4].value : [];
+    const me = results[5].status === "fulfilled" ? results[5].value : null;
+
+    if (results.some((r) => r.status === "rejected")) {
+      setLoadError("Some dashboard data could not be loaded. Showing available data.");
+    }
+
+    const retailerNameById = new Map(
+      (retailersData || []).map((retailer) => [Number(retailer.id), retailer.name])
+    );
+    const enrichedOrders = (ordersData || []).map((order) => ({
+      ...order,
+      fromUserName:
+        order.fromRole === "retailer"
+          ? retailerNameById.get(Number(order.userId)) || order.fromUserName || "Retailer"
+          : order.fromRole,
+    }));
+
+    setOrders(enrichedOrders);
+    setStock(stockData || []);
+    setRetailers(retailersData || []);
+    setCurrentUser(me);
+    setLoyalty(loyaltyData || { total_purchase: 0, loyalty_points: 0 });
     setFinance(financeData);
 
-    const retailerOrders = ordersData.filter((o) => o.fromRole === "retailer" && o.status === "pending");
+    const retailerOrders = enrichedOrders.filter((o) => o.fromRole === "retailer" && o.status === "pending");
     const avail = {};
     for (const order of retailerOrders) {
-      const result = await checkStockAvailability(order.itemName, order.quantity, "distributor");
-      avail[order.id] = result.available;
+      try {
+        const result = await checkStockAvailability(order.itemName, order.quantity, "distributor");
+        avail[order.id] = result.available;
+      } catch {
+        avail[order.id] = false;
+      }
     }
     setStockAvailability(avail);
   };
@@ -95,8 +133,13 @@ export default function DistributorPage() {
     loadData();
   };
 
-  const retailerOrders = orders.filter((o) => o.fromRole === "retailer");
-  const myOrders = orders.filter((o) => o.fromRole === "distributor");
+  const retailerIds = new Set((retailers || []).map((r) => Number(r.id)));
+  const retailerOrders = orders.filter(
+    (o) => o.fromRole === "retailer" && retailerIds.has(Number(o.userId))
+  );
+  const myOrders = orders.filter(
+    (o) => o.fromRole === "distributor" && Number(o.userId) === Number(currentUser?.id)
+  );
   const pendingRetailerOrders = retailerOrders.filter((o) => o.status === "pending").length;
   const approvedMyOrders = myOrders.filter((o) => o.status === "approved").length;
 
@@ -120,7 +163,11 @@ export default function DistributorPage() {
       label: "Total",
       render: (val) => `₹${(val || 0).toFixed(2)}`,
     },
-    { key: "fromRole", label: "From" },
+    {
+      key: "fromUserName",
+      label: "From Retailer",
+      render: (_, row) => row.fromUserName || "Retailer",
+    },
     {
       key: "status",
       label: "Status",
@@ -274,15 +321,38 @@ export default function DistributorPage() {
           </div>
         );
 
+      case "myRetailers":
+        const retailerRows = retailers.map((retailer, index) => ({
+          ...retailer,
+          displayId: index + 1,
+        }));
+        return (
+          <div className="featureSection">
+            <h2>Retailers Under Me</h2>
+            <Table
+              columns={[
+                { key: "displayId", label: "Retailer ID" },
+                { key: "name", label: "Name" },
+                { key: "email", label: "Email" },
+              ]}
+              data={retailerRows}
+              emptyMessage="No retailers linked to this distributor yet"
+            />
+          </div>
+        );
+
       case "loyalty":
         return (
           <div className="featureSection">
             <h2>Loyalty Points</h2>
             <div className="loyaltyDisplay">
-              <div className="loyaltyPoints">{loyalty.distributor}</div>
+              <div className="loyaltyPoints">{loyalty.loyalty_points}</div>
               <div className="loyaltyLabel">Distributor Loyalty Points</div>
+              <p style={{ marginTop: "12px", color: "var(--text-light)", fontSize: "14px" }}>
+                Total Purchase: Rs {(loyalty.total_purchase || 0).toFixed(2)}
+              </p>
               <p style={{ marginTop: "16px", color: "var(--text-light)", fontSize: "14px" }}>
-                Earn points by processing orders and maintaining stock levels
+                Earn 1 point for every Rs 10 spent on delivered orders
               </p>
             </div>
           </div>
@@ -354,10 +424,15 @@ export default function DistributorPage() {
           <div>
             <h1>Distributor Dashboard</h1>
             <p>Manage orders, stock, loyalty points, and finances</p>
+            {loadError && (
+              <p style={{ marginTop: "8px", color: "#b45309", fontWeight: 600 }}>
+                {loadError}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="cardGrid">
+        <div className="cardGrid cardGridDistributor">
           <Card
             title="Pending from Retailers"
             value={pendingRetailerOrders}
@@ -370,7 +445,12 @@ export default function DistributorPage() {
           />
           <Card
             title="Loyalty Points"
-            value={loyalty.distributor}
+            value={loyalty.loyalty_points}
+            variant="highlight"
+          />
+          <Card
+            title="My Retailers"
+            value={retailers.length}
             variant="highlight"
           />
           {finance && (

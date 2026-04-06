@@ -2,7 +2,7 @@ import { getData } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/utils/constants";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8070/api/v1";
 
 function getAuthToken() {
   const auth = getData(STORAGE_KEYS.AUTH);

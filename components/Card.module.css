@@ -1,9 +1,9 @@
 .card {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f1f5f9;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  border: 1px solid #e3eaf4;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   position: relative;
   overflow: hidden;
@@ -15,7 +15,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 4px;
 }
 
 .highlight::before {
@@ -23,27 +23,27 @@
 }
 
 .success::before {
-  background: #22c55e;
+  background: #16a34a;
 }
 
 .warning::before {
-  background: #f59e0b;
+  background: #d97706;
 }
 
 .danger::before {
-  background: #ef4444;
+  background: #dc2626;
 }
 
 .card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.1);
+  transform: translateY(-2px);
 }
 
 .cardHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .icon {
@@ -52,7 +52,7 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 20px;
   flex-shrink: 0;
 }
@@ -66,26 +66,26 @@
 }
 
 .warning .icon {
-  background: #fef3c7;
+  background: #ffedd5;
 }
 
 .danger .icon {
-  background: #fee2e2;
+  background: #ffe4e6;
 }
 
 .title {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   color: var(--text-light);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
 }
 
 .value {
-  font-size: 30px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
   color: var(--text);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.9px;
   line-height: 1.2;
   margin-bottom: 4px;
 }

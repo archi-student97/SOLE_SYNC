@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import get_current_user
 from app.schemas.auth import (
+    DistributorOption,
     ForgotPasswordRequest,
     LoginRequest,
     LoginResponse,
+    RetailerOption,
     UserCreateRequest,
     UserManageItem,
     UserPublic,
@@ -13,6 +15,8 @@ from app.schemas.common import MessageResponse
 from app.services.auth_service import (
     authenticate_user,
     create_user_account,
+    list_distributors_for_management,
+    list_retailers_for_distributor,
     list_users_for_management,
     remove_user_account,
     reset_password,
@@ -37,7 +41,13 @@ async def create_user_endpoint(
     if current_user.get("role") != "management":
         raise HTTPException(status_code=403, detail="Only management can create users")
 
-    result = await create_user_account(payload.name, payload.role, payload.email, payload.password)
+    result = await create_user_account(
+        payload.name,
+        payload.role,
+        payload.email,
+        payload.password,
+        distributor_id=payload.distributorId,
+    )
     if not result.get("success"):
         raise HTTPException(status_code=400, detail=result.get("error"))
     return UserPublic(**result["user"])
@@ -49,6 +59,22 @@ async def get_users_endpoint(current_user: dict = Depends(get_current_user)) -> 
         raise HTTPException(status_code=403, detail="Only management can view users")
     users = await list_users_for_management()
     return [UserManageItem(**u) for u in users]
+
+
+@router.get("/users/distributors", response_model=list[DistributorOption])
+async def get_distributors_endpoint(current_user: dict = Depends(get_current_user)) -> list[DistributorOption]:
+    if current_user.get("role") != "management":
+        raise HTTPException(status_code=403, detail="Only management can view distributors")
+    items = await list_distributors_for_management()
+    return [DistributorOption(**item) for item in items]
+
+
+@router.get("/users/my-retailers", response_model=list[RetailerOption])
+async def get_my_retailers_endpoint(current_user: dict = Depends(get_current_user)) -> list[RetailerOption]:
+    if current_user.get("role") != "distributor":
+        raise HTTPException(status_code=403, detail="Only distributors can view linked retailers")
+    items = await list_retailers_for_distributor(int(current_user["id"]))
+    return [RetailerOption(**item) for item in items]
 
 
 @router.delete("/users/{user_id}", response_model=MessageResponse)

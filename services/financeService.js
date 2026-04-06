@@ -14,6 +14,6 @@ export async function getExpenses() {
   return finance.expenses;
 }
 
-export async function getSummary() {
-  return await fetchFinanceSummary();
+export async function getSummary(role = "") {
+  return await fetchFinanceSummary(role);
 }

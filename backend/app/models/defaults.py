@@ -8,6 +8,8 @@ DEFAULT_USERS = [
         "password": hash_password("admin123"),
         "name": "Admin",
         "role": "management",
+        "total_purchase": 0.0,
+        "loyalty_points": 0,
     },
 ]
 

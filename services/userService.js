@@ -2,6 +2,8 @@ import {
   authenticateUser,
   createUser,
   deleteUser,
+  fetchDistributors,
+  fetchMyRetailers,
   fetchUsers,
   forgotPassword,
   getAuthState,
@@ -26,8 +28,8 @@ export async function logout() {
   await logoutUser();
 }
 
-export async function createUserAccount(name, role, email, password) {
-  return await createUser(name, role, email, password);
+export async function createUserAccount(name, role, email, password, distributorId = null) {
+  return await createUser(name, role, email, password, distributorId);
 }
 
 export async function resetPassword(email, newPassword) {
@@ -36,6 +38,14 @@ export async function resetPassword(email, newPassword) {
 
 export async function getManagedUsers() {
   return await fetchUsers();
+}
+
+export async function getDistributorsForRetailerLink() {
+  return await fetchDistributors();
+}
+
+export async function getMyRetailersUnderDistributor() {
+  return await fetchMyRetailers();
 }
 
 export async function deleteUserAccount(userId) {

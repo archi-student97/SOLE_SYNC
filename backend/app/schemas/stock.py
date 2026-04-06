@@ -8,13 +8,18 @@ class StockItemBase(BaseModel):
 
 
 class StockItemCreate(StockItemBase):
-    pass
+    managementCostPrice: float | None = None
+    managementSellPrice: float | None = None
+    distributorSellPrice: float | None = None
 
 
 class StockItemUpdate(BaseModel):
     name: str | None = None
     quantity: int | None = None
     price: float | None = None
+    managementCostPrice: float | None = None
+    managementSellPrice: float | None = None
+    distributorSellPrice: float | None = None
 
 
 class StockItem(StockItemBase):
