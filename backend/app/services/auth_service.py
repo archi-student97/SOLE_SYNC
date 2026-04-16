@@ -29,7 +29,8 @@ def _to_public_user(user: dict) -> dict:
 
 async def authenticate_user(email: str, password: str) -> dict:
     user = await get_user_by_email(email)
-    if not user or not verify_password(password, user["password"]):
+    password_hash = (user or {}).get("password")
+    if not user or not password_hash or not verify_password(password, password_hash):
         return {"success": False, "error": "Invalid email or password"}
 
     # Backfill plainPassword for legacy distributor/retailer users so management can view credentials.
