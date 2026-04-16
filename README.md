@@ -78,6 +78,25 @@ ACCESS_TOKEN_EXPIRE_MINUTES=120
 CORS_ORIGINS=http://localhost:3000
 ```
 
+### 3) Vercel Production Environment Variables (Required)
+
+Set these in Vercel Project Settings for the backend service:
+
+```env
+MONGODB_URI=<your-mongodb-atlas-uri>
+MONGODB_DB_NAME=sole_sync
+JWT_SECRET_KEY=<strong-random-secret>
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=120
+CORS_ORIGINS=https://<your-frontend-domain>.vercel.app
+```
+
+For frontend service:
+
+```env
+NEXT_PUBLIC_API_BASE_URL=/_backend/api/v1
+```
+
 ## Run the Project
 
 Open two terminals in VS Code.

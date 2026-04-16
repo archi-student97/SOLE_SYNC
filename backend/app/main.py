@@ -2,6 +2,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.requests import Request
+from fastapi.responses import JSONResponse
+from pymongo.errors import PyMongoError
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
@@ -30,6 +33,16 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.api_prefix)
+
+
+@app.exception_handler(RuntimeError)
+async def runtime_error_handler(_: Request, exc: RuntimeError):
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
+@app.exception_handler(PyMongoError)
+async def mongo_error_handler(_: Request, exc: PyMongoError):
+    return JSONResponse(status_code=503, content={"detail": f"Database error: {exc}"})
 
 
 @app.get("/health")

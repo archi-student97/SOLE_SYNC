@@ -1,3 +1,5 @@
+import os
+
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 from app.core.config import get_settings
@@ -11,7 +13,14 @@ def _ensure_connection() -> None:
     if client is not None and database is not None:
         return
     settings = get_settings()
-    client = AsyncIOMotorClient(settings.mongodb_uri)
+    uri = settings.mongodb_uri.strip()
+    if (uri.startswith("mongodb://localhost") or uri.startswith("mongodb://127.0.0.1")) and (
+        str(os.environ.get("VERCEL", "")).lower() in {"1", "true"}
+    ):
+        raise RuntimeError(
+            "MONGODB_URI is not configured for production. Set a cloud MongoDB URI in Vercel env vars."
+        )
+    client = AsyncIOMotorClient(uri, serverSelectionTimeoutMS=8000)
     database = client[settings.mongodb_db_name]
 
 
