@@ -1,11 +1,22 @@
 import { getData } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/utils/constants";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  (process.env.NODE_ENV === "development"
-    ? "http://localhost:8070/api/v1"
-    : "/_backend/api/v1");
+function resolveApiBaseUrl() {
+  const envBase = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  const isProd = process.env.NODE_ENV === "production";
+
+  if (envBase) {
+    const looksLikeLocalhost =
+      envBase.includes("localhost") || envBase.includes("127.0.0.1");
+    if (!(isProd && looksLikeLocalhost)) {
+      return envBase;
+    }
+  }
+
+  return isProd ? "/_backend/api/v1" : "http://localhost:8070/api/v1";
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 function getAuthToken() {
   const auth = getData(STORAGE_KEYS.AUTH);

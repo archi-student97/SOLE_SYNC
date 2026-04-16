@@ -120,7 +120,7 @@ Open app:
 ## Default Admin Login
 
 - Email: `admin@sole.com`
-- Password: `admin@13`
+- Password: `admin123`
 
 Then create distributor/retailer users from Management dashboard.
 
