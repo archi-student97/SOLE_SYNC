@@ -81,6 +81,8 @@ async def approve_order_by_distributor(order_id: int) -> dict:
     order = await get_order(order_id)
     if not order:
         return {"success": False, "reason": "not_found"}
+    if (order.get("status") or "").lower() != ORDER_STATUS["PENDING"]:
+        return {"success": True, "order": order, "reason": "already_processed"}
 
     stock_result = await check_stock_availability(order["itemName"], order["quantity"], "distributor")
     if not stock_result["available"]:
@@ -112,9 +114,12 @@ async def request_restock_from_management(order_id: int, order_data: dict, user_
 
 async def approve_order_management(order_id: int) -> dict | None:
     order = await get_order(order_id)
-    updated = await set_order_status(order_id, ORDER_STATUS["APPROVED"])
     if not order:
-        return updated
+        return None
+    if (order.get("status") or "").lower() != ORDER_STATUS["PENDING"]:
+        return order
+
+    updated = await set_order_status(order_id, ORDER_STATUS["APPROVED"])
 
     if order["fromRole"] == "distributor":
         # Management approval transfers stock from management to distributor.

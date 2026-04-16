@@ -24,6 +24,7 @@ export default function RetailerPage() {
   const [orderItem, setOrderItem] = useState("");
   const [orderQty, setOrderQty] = useState("");
   const [orderPrice, setOrderPrice] = useState("");
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -51,19 +52,24 @@ export default function RetailerPage() {
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
-    if (!orderItem || !orderQty || !orderPrice) return;
-    await placeOrder({
-      itemName: orderItem,
-      quantity: parseInt(orderQty),
-      totalPrice: parseFloat(orderPrice) * parseInt(orderQty),
-      unitPrice: parseFloat(orderPrice),
-      fromRole: "retailer",
-      toRole: "distributor",
-    });
-    setOrderItem("");
-    setOrderQty("");
-    setOrderPrice("");
-    loadData();
+    if (!orderItem || !orderQty || !orderPrice || isPlacingOrder) return;
+    setIsPlacingOrder(true);
+    try {
+      await placeOrder({
+        itemName: orderItem,
+        quantity: parseInt(orderQty),
+        totalPrice: parseFloat(orderPrice) * parseInt(orderQty),
+        unitPrice: parseFloat(orderPrice),
+        fromRole: "retailer",
+        toRole: "distributor",
+      });
+      setOrderItem("");
+      setOrderQty("");
+      setOrderPrice("");
+      await loadData();
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
 
   const handleDeleteOrder = async (id) => {
@@ -167,8 +173,8 @@ export default function RetailerPage() {
                 />
               </div>
               <div className="formActions">
-                <Button type="submit" variant="primary">
-                  Place Order
+                <Button type="submit" variant="primary" disabled={isPlacingOrder}>
+                  {isPlacingOrder ? "Placing..." : "Place Order"}
                 </Button>
               </div>
             </form>

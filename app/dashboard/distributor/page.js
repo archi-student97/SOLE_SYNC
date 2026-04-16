@@ -30,6 +30,8 @@ export default function DistributorPage() {
   const [orderItem, setOrderItem] = useState("");
   const [orderQty, setOrderQty] = useState("");
   const [orderPrice, setOrderPrice] = useState("");
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [processingOrderIds, setProcessingOrderIds] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -92,40 +94,57 @@ export default function DistributorPage() {
   };
 
   const handleApprove = async (id) => {
-    const result = await approveOrderByDistributor(id);
-    if (result && !result.success) {
-      alert("Insufficient stock to approve this order.");
+    if (processingOrderIds.includes(id)) return;
+    setProcessingOrderIds((prev) => [...prev, id]);
+    try {
+      const result = await approveOrderByDistributor(id);
+      if (result && !result.success) {
+        alert("Insufficient stock to approve this order.");
+      }
+      await loadData();
+    } finally {
+      setProcessingOrderIds((prev) => prev.filter((orderId) => orderId !== id));
     }
-    loadData();
   };
 
   const handleRequestRestock = async (order) => {
+    if (processingOrderIds.includes(order.id)) return;
+    setProcessingOrderIds((prev) => [...prev, order.id]);
     const stockItem = stock.find((s) => s.name === order.itemName);
-    await requestRestockFromManagement(order.id, {
-      itemName: order.itemName,
-      quantity: order.quantity,
-      unitPrice: stockItem ? stockItem.price : order.unitPrice,
-      totalPrice: stockItem ? stockItem.price * order.quantity : order.totalPrice,
-    });
-    loadData();
+    try {
+      await requestRestockFromManagement(order.id, {
+        itemName: order.itemName,
+        quantity: order.quantity,
+        unitPrice: stockItem ? stockItem.price : order.unitPrice,
+        totalPrice: stockItem ? stockItem.price * order.quantity : order.totalPrice,
+      });
+      await loadData();
+    } finally {
+      setProcessingOrderIds((prev) => prev.filter((orderId) => orderId !== order.id));
+    }
   };
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
-    if (!orderItem || !orderQty || !orderPrice) return;
-    const { placeOrder } = await import("@/services/orderService");
-    await placeOrder({
-      itemName: orderItem,
-      quantity: parseInt(orderQty),
-      totalPrice: parseFloat(orderPrice) * parseInt(orderQty),
-      unitPrice: parseFloat(orderPrice),
-      fromRole: "distributor",
-      toRole: "management",
-    });
-    setOrderItem("");
-    setOrderQty("");
-    setOrderPrice("");
-    loadData();
+    if (!orderItem || !orderQty || !orderPrice || isPlacingOrder) return;
+    setIsPlacingOrder(true);
+    try {
+      const { placeOrder } = await import("@/services/orderService");
+      await placeOrder({
+        itemName: orderItem,
+        quantity: parseInt(orderQty),
+        totalPrice: parseFloat(orderPrice) * parseInt(orderQty),
+        unitPrice: parseFloat(orderPrice),
+        fromRole: "distributor",
+        toRole: "management",
+      });
+      setOrderItem("");
+      setOrderQty("");
+      setOrderPrice("");
+      await loadData();
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
 
   const handleDeleteOrder = async (id) => {
@@ -210,8 +229,12 @@ export default function DistributorPage() {
                 const hasRestockRequest = linkedOrderIds.has(row.id);
                 if (hasStock) {
                   return (
-                    <Button variant="success" onClick={() => handleApprove(row.id)}>
-                      Approve
+                    <Button
+                      variant="success"
+                      onClick={() => handleApprove(row.id)}
+                      disabled={processingOrderIds.includes(row.id)}
+                    >
+                      {processingOrderIds.includes(row.id) ? "Processing..." : "Approve"}
                     </Button>
                   );
                 }
@@ -223,8 +246,12 @@ export default function DistributorPage() {
                   );
                 }
                 return (
-                  <Button variant="primary" onClick={() => handleRequestRestock(row)}>
-                    Request Restock
+                  <Button
+                    variant="primary"
+                    onClick={() => handleRequestRestock(row)}
+                    disabled={processingOrderIds.includes(row.id)}
+                  >
+                    {processingOrderIds.includes(row.id) ? "Processing..." : "Request Restock"}
                   </Button>
                 );
               }}
@@ -292,8 +319,8 @@ export default function DistributorPage() {
                 />
               </div>
               <div className="formActions">
-                <Button type="submit" variant="primary">
-                  Place Order
+                <Button type="submit" variant="primary" disabled={isPlacingOrder}>
+                  {isPlacingOrder ? "Placing..." : "Place Order"}
                 </Button>
               </div>
             </form>

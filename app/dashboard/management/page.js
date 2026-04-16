@@ -52,6 +52,7 @@ export default function ManagementPage() {
   const [distributors, setDistributors] = useState([]);
   const [distributorsLoading, setDistributorsLoading] = useState(false);
   const [distributorsError, setDistributorsError] = useState("");
+  const [processingOrderIds, setProcessingOrderIds] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -85,13 +86,25 @@ export default function ManagementPage() {
   };
 
   const handleApprove = async (id) => {
-    await approveOrder(id);
-    loadData();
+    if (processingOrderIds.includes(id)) return;
+    setProcessingOrderIds((prev) => [...prev, id]);
+    try {
+      await approveOrder(id);
+      await loadData();
+    } finally {
+      setProcessingOrderIds((prev) => prev.filter((orderId) => orderId !== id));
+    }
   };
 
   const handleReject = async (id) => {
-    await rejectOrder(id);
-    loadData();
+    if (processingOrderIds.includes(id)) return;
+    setProcessingOrderIds((prev) => [...prev, id]);
+    try {
+      await rejectOrder(id);
+      await loadData();
+    } finally {
+      setProcessingOrderIds((prev) => prev.filter((orderId) => orderId !== id));
+    }
   };
 
   const handleDeleteOrder = async (id) => {
@@ -272,11 +285,19 @@ export default function ManagementPage() {
                 if (row.status === "pending") {
                   return (
                     <div style={{ display: "flex", gap: "6px" }}>
-                      <Button variant="success" onClick={() => handleApprove(row.id)}>
-                        Approve
+                      <Button
+                        variant="success"
+                        onClick={() => handleApprove(row.id)}
+                        disabled={processingOrderIds.includes(row.id)}
+                      >
+                        {processingOrderIds.includes(row.id) ? "Processing..." : "Approve"}
                       </Button>
-                      <Button variant="danger" onClick={() => handleReject(row.id)}>
-                        Reject
+                      <Button
+                        variant="danger"
+                        onClick={() => handleReject(row.id)}
+                        disabled={processingOrderIds.includes(row.id)}
+                      >
+                        {processingOrderIds.includes(row.id) ? "Processing..." : "Reject"}
                       </Button>
                     </div>
                   );
