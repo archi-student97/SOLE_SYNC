@@ -81,3 +81,15 @@
   font-size: 14px;
   margin: 0;
 }
+
+@media (max-width: 768px) {
+  .table {
+    min-width: 620px;
+    font-size: 13px;
+  }
+
+  .th,
+  .td {
+    padding: 12px 10px;
+  }
+}

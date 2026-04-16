@@ -1051,6 +1051,77 @@ textarea {
 @media (max-width: 768px) {
   .mainContent {
     margin-left: 0;
-    padding: 20px;
+    padding: 72px 14px 16px;
+  }
+
+  .pageHeader {
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+
+  .pageHeader h1 {
+    font-size: 26px;
+    line-height: 1.15;
+  }
+
+  .pageHeader p {
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  .featureSection {
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .featureSection h2 {
+    font-size: 20px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+
+  .featureSection h3 {
+    font-size: 16px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .cardGrid.cardGridRetailer,
+  .cardGrid.cardGridDistributor,
+  .cardGrid.cardGridManagement {
+    grid-template-columns: 1fr;
+  }
+
+  .loyaltyDisplay {
+    padding: 34px 14px;
+  }
+
+  .loyaltyPoints {
+    font-size: 48px;
+    letter-spacing: -1px;
+  }
+
+  .transactionItem {
+    padding: 12px 0;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .formActions {
+    justify-content: stretch;
+  }
+
+  .formActions button {
+    width: 100%;
+  }
+
+  .stockControls {
+    gap: 4px;
   }
 }

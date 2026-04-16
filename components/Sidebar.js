@@ -111,6 +111,7 @@ export default function Sidebar({ activeFeature, onFeatureChange }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   let currentRole = null;
   if (pathname.includes("/management")) currentRole = "management";
@@ -123,93 +124,145 @@ export default function Sidebar({ activeFeature, onFeatureChange }) {
     getCurrentUser().then(setUser);
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname, activeFeature]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    document.body.style.overflow = isMobileMenuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
+
   const handleLogout = async () => {
     await logout();
     router.push("/");
   };
 
+  const handleFeatureClick = (feature) => {
+    onFeatureChange(feature);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.logo}>
-        <div className={styles.logoMark}>
-          <span className={styles.logoLetters}>SS</span>
-        </div>
-        <div className={styles.logoGroup}>
-          <span className={styles.logoText}>Sole Sync</span>
-          <span className={styles.logoSubtext}>Supply Chain</span>
-        </div>
-      </div>
-
-      <nav className={styles.nav}>
-        {currentRole && (
-          <>
-            <div className={styles.sectionLabel}>{roleLabels[currentRole]}</div>
-            {menuItems.map((item) => (
-              <button
-                key={item.feature}
-                className={`${styles.navItem} ${
-                  activeFeature === item.feature ? styles.active : ""
-                }`}
-                onClick={() => onFeatureChange(item.feature)}
-              >
-                <span className={styles.navIcon}>{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
-            ))}
-
-          </>
+    <>
+      <button
+        type="button"
+        className={styles.mobileMenuButton}
+        onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+        aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+        aria-expanded={isMobileMenuOpen}
+      >
+        {isMobileMenuOpen ? (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
         )}
+      </button>
 
-        {!currentRole && (
-          <>
-            <Link
-              href="/dashboard/management"
-              className={`${styles.navItem} ${
-                pathname.includes("/management") ? styles.active : ""
-              }`}
-            >
-              <span className={styles.navIcon}>{icons.building}</span>
-              <span>Management</span>
-            </Link>
-            <Link
-              href="/dashboard/distributor"
-              className={`${styles.navItem} ${
-                pathname.includes("/distributor") ? styles.active : ""
-              }`}
-            >
-              <span className={styles.navIcon}>{icons.truck}</span>
-              <span>Distributor</span>
-            </Link>
-            <Link
-              href="/dashboard/retailer"
-              className={`${styles.navItem} ${
-                pathname.includes("/retailer") ? styles.active : ""
-              }`}
-            >
-              <span className={styles.navIcon}>{icons.shoppingCart}</span>
-              <span>Retailer</span>
-            </Link>
-          </>
-        )}
-      </nav>
+      {isMobileMenuOpen && (
+        <button
+          type="button"
+          className={styles.backdrop}
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-label="Close menu backdrop"
+        />
+      )}
 
-      <div className={styles.footer}>
-        {user && (
-          <div className={styles.userInfo}>
-            <div className={styles.userAvatar} style={{ background: roleColors[currentRole] || "#4f46e5" }}>
-              {user.name ? user.name.charAt(0).toUpperCase() : "U"}
-            </div>
-            <div className={styles.userDetails}>
-              <div className={styles.userName}>{user.name}</div>
-              <div className={styles.userRole}>{user.role}</div>
-            </div>
+      <aside className={`${styles.sidebar} ${isMobileMenuOpen ? styles.sidebarOpen : ""}`}>
+        <div className={styles.logo}>
+          <div className={styles.logoMark}>
+            <span className={styles.logoLetters}>SS</span>
           </div>
-        )}
-        <button className={styles.logoutBtn} onClick={handleLogout}>
-          {icons.logOut}
-          <span>Logout</span>
-        </button>
-      </div>
-    </aside>
+          <div className={styles.logoGroup}>
+            <span className={styles.logoText}>Sole Sync</span>
+            <span className={styles.logoSubtext}>Supply Chain</span>
+          </div>
+        </div>
+
+        <nav className={styles.nav}>
+          {currentRole && (
+            <>
+              <div className={styles.sectionLabel}>{roleLabels[currentRole]}</div>
+              {menuItems.map((item) => (
+                <button
+                  key={item.feature}
+                  className={`${styles.navItem} ${
+                    activeFeature === item.feature ? styles.active : ""
+                  }`}
+                  onClick={() => handleFeatureClick(item.feature)}
+                >
+                  <span className={styles.navIcon}>{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+
+            </>
+          )}
+
+          {!currentRole && (
+            <>
+              <Link
+                href="/dashboard/management"
+                className={`${styles.navItem} ${
+                  pathname.includes("/management") ? styles.active : ""
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className={styles.navIcon}>{icons.building}</span>
+                <span>Management</span>
+              </Link>
+              <Link
+                href="/dashboard/distributor"
+                className={`${styles.navItem} ${
+                  pathname.includes("/distributor") ? styles.active : ""
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className={styles.navIcon}>{icons.truck}</span>
+                <span>Distributor</span>
+              </Link>
+              <Link
+                href="/dashboard/retailer"
+                className={`${styles.navItem} ${
+                  pathname.includes("/retailer") ? styles.active : ""
+                }`}
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span className={styles.navIcon}>{icons.shoppingCart}</span>
+                <span>Retailer</span>
+              </Link>
+            </>
+          )}
+        </nav>
+
+        <div className={styles.footer}>
+          {user && (
+            <div className={styles.userInfo}>
+              <div className={styles.userAvatar} style={{ background: roleColors[currentRole] || "#4f46e5" }}>
+                {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+              </div>
+              <div className={styles.userDetails}>
+                <div className={styles.userName}>{user.name}</div>
+                <div className={styles.userRole}>{user.role}</div>
+              </div>
+            </div>
+          )}
+          <button className={styles.logoutBtn} onClick={handleLogout}>
+            {icons.logOut}
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

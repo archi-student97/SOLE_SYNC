@@ -82,3 +82,10 @@
   background: #f1f5f9;
   color: var(--text);
 }
+
+@media (max-width: 768px) {
+  .button {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+}
