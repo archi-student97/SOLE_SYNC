@@ -2,8 +2,13 @@ import { getData } from "@/lib/storage";
 import { STORAGE_KEYS } from "@/utils/constants";
 
 function resolveApiBaseUrl() {
+  const serviceBase = process.env.NEXT_PUBLIC_BACKEND_URL?.trim();
   const envBase = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
   const isProd = process.env.NODE_ENV === "production";
+
+  if (isProd && serviceBase) {
+    return `${serviceBase}/api/v1`;
+  }
 
   if (envBase) {
     const looksLikeLocalhost =
@@ -47,14 +52,23 @@ async function request(path, options = {}) {
   }
 
   let data = null;
+  let rawText = "";
   try {
     data = await response.json();
   } catch {
-    data = null;
+    try {
+      rawText = await response.text();
+    } catch {
+      rawText = "";
+    }
   }
 
   if (!response.ok) {
-    const message = data?.detail || data?.message || "Request failed";
+    const message =
+      data?.detail ||
+      data?.message ||
+      rawText ||
+      `Request failed (${response.status}) for ${path}`;
     throw new Error(message);
   }
   return data;
