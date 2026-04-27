@@ -185,49 +185,6 @@ Then create distributor/retailer users from Management dashboard.
 7. Verify net profit card changes after order updates
 8. Soft delete an approved order and confirm it disappears from UI but remains in DB with `isDeleted: true`
 
-## Common Issues
-
-### "Another next dev server is already running"
-
-Stop old process:
-
-```powershell
-taskkill /PID <PID> /F
-```
-
-Then run `npm run dev` once.
-
-### "Cannot connect to backend at http://localhost:8070/api/v1"
-
-This means frontend is running but backend is not reachable.
-
-Check backend:
-
-```powershell
-Invoke-WebRequest http://127.0.0.1:8070/health -UseBasicParsing
-```
-
-If it fails, start backend:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\start-backend.ps1
-```
-
-Then hard refresh browser (`Ctrl + F5`).
-
-### Pytest folders like `pytest-cache-files-*`
-
-These are temporary test cache folders and safe to remove:
-
-```powershell
-Remove-Item -Recurse -Force .\pytest-cache-files-* -ErrorAction SilentlyContinue
-```
-
-### Frontend still shows old data
-
-- Hard refresh: `Ctrl + F5`
-- Logout and login again
-
 ## GitHub Push (Quick)
 
 ```powershell
